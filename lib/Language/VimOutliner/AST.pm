@@ -1,6 +1,83 @@
 package Language::VimOutliner::AST;
 
 use Modern::Perl;
+use Marpa::R2;
+
+sub grammar {
+	return \(<<'GRAMMAR');
+
+:start ::= Top
+
+Top ::=
+	Items
+
+Items ::= Item+
+
+Item ::=
+	  OptIndent Heading (Newline)
+	| (Newline)
+
+OptIndent ::= Indent
+OptIndent ::= # empty
+
+Text ~ [^\t\n] RestText
+RestText ~ [^\n]*
+
+Heading ::=
+	  CheckboxHeading     # [_] [X]
+	 | TextObject          # :
+	 | PreTextObject       # ;
+	 | TableObject         # |
+	 | UserTextObject      # >
+	 | UserPreTextObject   # >
+	#|| SimpleHeading
+
+SimpleHeading ::=
+	Text
+
+# [_] ...
+CheckboxHeading ::=
+	CheckboxPrefix Space Text
+
+#   :      body text (wrapping)
+TextObject ::=
+	TextObjectPrefix Text
+
+
+#   ;      preformatted body text (non-wrapping)
+PreTextObject ::=
+	PreTextObjectPrefix Text
+
+#   |      table
+TableObject ::=
+	TableObjectPrefix Text
+
+#   >      user-defined, text block (wrapping)
+UserTextObject ::=
+	UserTextObjectPrefix Text
+
+#   <      user-defined, preformatted text block (non-wrapping)
+UserPreTextObject ::=
+	UserPreTextObjectPrefix Text
+
+Space ~ ' '
+
+LeftBrace ~ '['
+RightBrace ~ ']'
+CheckboxInner ~ [_X]
+CheckboxPrefix ~ LeftBrace CheckboxInner RightBrace
+
+TextObjectPrefix ~ ':'
+PreTextObjectPrefix ~ ';'
+TableObjectPrefix ~ '|'
+UserTextObjectPrefix ~ '>'
+UserPreTextObjectPrefix ~ '<'
+
+Indent ~ [\t]+
+Newline ~ [\n]
+
+GRAMMAR
+}
 
 1;
 =pod
