@@ -1,0 +1,4 @@
+[TestingAndDebugging::RequireUseStrict]
+equivalent_modules = Modern::Perl Moo Moo::Role Language::VimOutliner::Setup
+
+# vim: ft=dosini

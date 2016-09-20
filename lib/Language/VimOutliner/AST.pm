@@ -2,6 +2,8 @@ package Language::VimOutliner::AST;
 
 use Modern::Perl;
 use Marpa::R2;
+use feature qw(signatures);
+no warnings qw(experimental::signatures);
 
 sub grammar {
 	return \(<<'GRAMMAR');
@@ -77,6 +79,25 @@ Indent ~ [\t]+
 Newline ~ [\n]
 
 GRAMMAR
+}
+
+sub parse($file) { ## no critic (signature, not prototype)
+	my $grammar = Marpa::R2::Scanless::G->new({
+		#default_action => '::array',
+		default_action => '[name,values]',
+		source => Language::VimOutliner::AST->grammar,
+	});
+
+	my $recce = Marpa::R2::Scanless::R->new( {
+		grammar => $grammar,
+		#trace_terminals => 1,
+		#trace_file_handle => $trace_fh
+		} );
+
+	my $input = $file->slurp_utf8;
+
+	$recce->read( \$input );
+	#use DDP; p $recce->value;
 }
 
 1;
