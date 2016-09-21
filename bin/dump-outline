@@ -15,7 +15,9 @@ sub main {
 	die "File not readable\n" unless -r $file;
 
 
-	my $tree = Language::VimOutliner::Parser->parse($file);
+	my $input = path($file)->slurp_utf8;
+
+	my $tree = Language::VimOutliner::Parser->parse($input);
 	Language::VimOutliner::Parser->Dump( $tree );
 	#use DDP; p $tree;
 }

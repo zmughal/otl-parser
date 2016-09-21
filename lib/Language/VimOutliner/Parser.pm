@@ -1,7 +1,6 @@
 use Language::VimOutliner::Setup;
 package Language::VimOutliner::Parser;
 
-use Path::Tiny;
 use Data::TreeDumper;
 use Tree::Simple;
 
@@ -28,9 +27,7 @@ sub Dump($class, $tree) { ## no critic (signature, not prototype)
 	say DumpTree($tree, 'root', FILTER => \&_tree_simple_filter );
 }
 
-sub parse($class, $file) { ## no critic (signature, not prototype)
-	my $input = path($file)->slurp_utf8;
-
+sub parse($class, $input) { ## no critic (signature, not prototype)
 	my $matches;
 	my $re = qr/
 		^
