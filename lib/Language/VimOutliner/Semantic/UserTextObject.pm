@@ -1,9 +1,9 @@
 package Language::VimOutliner::Semantic::UserTextObject;
 
 use Moo;
-extends qw(Language::VimOutliner::Semantic::HeadingBase);
+extends qw(Language::VimOutliner::Semantic::UserObjectBase);
 
 sub MATCH { qr/^ \Q>\E /x; }
-sub ADD_SIBLING { 0; }
+sub _object_prefix { '>'; }
 
 1;

@@ -4,8 +4,14 @@ use Modern::Perl;
 use Path::Tiny;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
+use List::AllUtils qw(all);
+use Scalar::Util qw(refaddr);
+use Time::Piece;
 
 use Language::VimOutliner::Parser;
+use Language::VimOutliner::Semantics;
+use Language::VimOutliner::Info::todo;
+use List::UtilsBy qw(sort_by);
 
 $|=1;
 
@@ -18,8 +24,72 @@ sub main {
 	my $input = path($file)->slurp_utf8;
 
 	my $tree = Language::VimOutliner::Parser->parse($input);
-	Language::VimOutliner::Parser->Dump( $tree );
-	#use DDP; p $tree;
+
+	#$tree->traverse(sub {
+		#my $node = shift;
+		#Moo::Role->apply_roles_to_object($node->getNodeValue,
+			#qw(Language::VimOutliner::Shallow::DebugHeadingRole) );
+	#});
+	#Language::VimOutliner::Parser->Dump( $tree );
+
+	my $semantic_tree = Language::VimOutliner::Semantics->semantic_tree($tree);
+	#Language::VimOutliner::Parser->Dump( $semantic_tree );
+
+	todo($semantic_tree);
+}
+
+sub todo {
+	my ($tree) = @_;
+	my @bottom_checkboxes = ();
+	my $nodes_with_no_checkbox_children = {};
+	my $mark_node = sub {
+		my ($node) = @_;
+		if( $node->getNodeValue()->isa('Language::VimOutliner::Semantic::CheckboxHeading') ) {
+			push @bottom_checkboxes, $node;
+		} else {
+			$nodes_with_no_checkbox_children->{refaddr $node} = 1;
+		}
+	};
+	$tree->traverse(
+		sub { 0 }, # do nothing pre-order
+		sub { # post-order
+			my $node = shift;
+			if( $node->isLeaf
+				or all { exists $nodes_with_no_checkbox_children->{refaddr $_ }  } $node->getAllChildren
+			) {
+				$mark_node->($node);
+			}
+		}
+	);
+
+	#Language::VimOutliner::Parser->Dump( $_ ) for @bottom_checkboxes;#DEBUG
+
+	my @checkboxes_todo = map {
+		Language::VimOutliner::Info::todo->new(
+			node => $_
+		);
+	} @bottom_checkboxes;
+
+	my @sorted = sort_by {
+		"" . !$_->done
+		. ($_->due   // 'ZZZZ-ZZ-ZZ')
+		. ($_->start // 'ZZZZ-ZZ-ZZ')
+	} @checkboxes_todo;
+
+	my $none_val = sprintf("%10s", "NONE");
+	my $today = localtime->ymd;
+	for my $todo (@sorted) {
+		if( ! $todo->done and $today ge ($todo->start // '') ) {
+			say "[@{[ $todo->done ? 'X' : '_' ]}] [due: @{[ $todo->due // $none_val ]}] [start: @{[ $todo->start // $none_val ]}] @{[ $todo->inner_text ]} ";
+			my $parent = $todo->node->getParent;
+			my $level = 0;
+			while( ! $parent->isRoot )  {
+				say "\t"x($level+1) . $parent->getNodeValue->stringify;
+				$level++;
+				$parent = $parent->getParent;
+			}
+		}
+	}
 }
 
 

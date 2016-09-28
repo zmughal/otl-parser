@@ -1,22 +1,18 @@
+use Modern::Perl;
 package Language::VimOutliner::Shallow::Heading;
 
 use Moo;
+use Language::VimOutliner::Setup;
 use Types::Standard qw(Str);
 use Language::VimOutliner::Semantics;
 
 use overload
-	'""' => sub {
-		my $text = $_[0]->text;
-		#return $text;
-
-		#DEBUG
-		return
-			Language::VimOutliner::Semantics->classify($text) . " : "
-				. $text =~ s/[A-Z]/%/gr
-					=~ s/[A-Za-z0-9]/x/gr
-					=~ s/%/X/gr;
-	};
+	'""' => sub { $_[0]->stringify };
 
 has text => ( is => 'rw', isa => Str );
+
+sub stringify($self, @) { ## no critic (signature, not prototype)
+	return $self->text;
+}
 
 1;
