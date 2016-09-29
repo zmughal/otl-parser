@@ -40,12 +40,18 @@ sub main {
 
 sub todo {
 	my ($tree) = @_;
-	my @bottom_checkboxes = ();
+	my @checkboxes_todo = ();
 	my $nodes_with_no_checkbox_children = {};
 	my $mark_node = sub {
 		my ($node) = @_;
+		my $todo;
 		if( $node->getNodeValue()->isa('Language::VimOutliner::Semantic::CheckboxHeading') ) {
-			push @bottom_checkboxes, $node;
+			$todo = Language::VimOutliner::Info::todo->new(
+				node => $node
+			);
+		}
+		if( $todo and not $todo->done ) {
+			push @checkboxes_todo, $todo;
 		} else {
 			$nodes_with_no_checkbox_children->{refaddr $node} = 1;
 		}
@@ -62,13 +68,7 @@ sub todo {
 		}
 	);
 
-	#Language::VimOutliner::Parser->Dump( $_ ) for @bottom_checkboxes;#DEBUG
-
-	my @checkboxes_todo = map {
-		Language::VimOutliner::Info::todo->new(
-			node => $_
-		);
-	} @bottom_checkboxes;
+	#Language::VimOutliner::Parser->Dump( $_->node ) for @checkboxes_todo ;#DEBUG
 
 	my @sorted = sort_by {
 		"" . !$_->done
