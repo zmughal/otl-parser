@@ -28,7 +28,6 @@ sub classify($class, $text) { ## no critic (signature, not prototype)
 	);
 
 	for my $heading_type (@custom_headings) {
-		no strict 'refs'; ## no critic (using to look up heading by short name)
 		return $heading_type if $text =~ $heading_type->MATCH;
 	}
 
@@ -44,7 +43,7 @@ sub semantic_tree($class, $tree) { ## no critic (signature, not prototype)
 	return $semantic_root;
 }
 
-sub _semantic_tree($class, $tree, $parent) {
+sub _semantic_tree($class, $tree, $parent) { ## no critic (signature, not prototype)
 	my @children = $tree->getAllChildren();
 	my $last_semantic_child = undef;
 	do {
